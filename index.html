@@ -38,7 +38,6 @@
     overflow:hidden;
   }
 
-  /* faint scanline / grid texture */
   body::before{
     content:"";
     position:fixed; inset:0;
@@ -61,7 +60,6 @@
     padding:22px 22px 26px;
   }
 
-  /* top bar */
   .topbar{
     display:flex;
     align-items:center;
@@ -95,7 +93,6 @@
     letter-spacing:0.04em;
   }
 
-  /* radar */
   .radar-wrap{
     display:flex;
     justify-content:center;
@@ -117,9 +114,7 @@
   }
   .radar .ring.r2{inset:22px;}
   .radar .ring.r3{inset:44px;}
-  .radar .crosshair{
-    position:absolute; inset:0;
-  }
+  .radar .crosshair{ position:absolute; inset:0; }
   .radar .crosshair::before,.radar .crosshair::after{
     content:"";
     position:absolute;
@@ -161,11 +156,7 @@
   .radar.locked .core{background:var(--teal); box-shadow:0 0 22px 8px rgba(45,230,176,0.7);}
   .radar.locked .blip{display:none;}
 
-  /* status headline */
-  .status-line{
-    text-align:center;
-    margin-bottom:16px;
-  }
+  .status-line{ text-align:center; margin-bottom:16px; }
   .status-line .verb{
     font-family:'Space Grotesk', sans-serif;
     font-weight:700;
@@ -190,7 +181,6 @@
     letter-spacing:0.02em;
   }
 
-  /* ip exposure row */
   .ip-row{
     display:flex;
     align-items:center;
@@ -206,11 +196,7 @@
     font-size:9.5px;
     letter-spacing:0.08em;
   }
-  .ip-row .ip-value{
-    color:var(--ink);
-    font-weight:500;
-    transition:color 0.3s ease;
-  }
+  .ip-row .ip-value{ color:var(--ink); font-weight:500; transition:color 0.3s ease; }
   .ip-row .ip-flag{
     color:var(--red);
     font-size:10px;
@@ -227,7 +213,6 @@
   }
   .ip-row.masked .ip-value{ color:var(--teal); }
 
-  /* progress bar */
   .bar-track{
     height:5px;
     border-radius:3px;
@@ -245,7 +230,6 @@
     box-shadow:0 0 10px rgba(45,230,176,0.4);
   }
 
-  /* log */
   .log{
     background:var(--bg-2);
     border:1px solid var(--line);
@@ -269,7 +253,6 @@
   .log .ok{color:var(--teal);}
   .log .tag{color:var(--ink-faint);}
 
-  /* server reveal card */
   .server-card{
     margin-top:16px;
     padding-top:16px;
@@ -299,17 +282,8 @@
     font-size:14.5px;
     color:var(--ink);
   }
-  .server-meta .city{
-    font-size:11px;
-    color:var(--ink-dim);
-    margin-top:2px;
-  }
-  .server-stats{
-    text-align:right;
-    font-size:10.5px;
-    color:var(--ink-dim);
-    line-height:1.7;
-  }
+  .server-meta .city{ font-size:11px; color:var(--ink-dim); margin-top:2px; }
+  .server-stats{ text-align:right; font-size:10.5px; color:var(--ink-dim); line-height:1.7; }
   .server-stats .ip{color:var(--ink);}
   .server-stats .ping{color:var(--teal);}
 
@@ -343,7 +317,7 @@
 
 <div class="frame">
   <div class="topbar">
-    <div class="brand"><span class="dot" id="brandDot"></span>SECURETUNNEL</div>
+    <div class="brand"><span class="dot" id="brandDot"></span>Connecting to STARLINK.. </div>
     <div class="clock" id="clock">00:00:00</div>
   </div>
 
@@ -391,7 +365,7 @@
 
   <div class="badge" id="badge">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-    Tunnel secured
+    Starlink Secured
   </div>
 </div>
 
@@ -401,18 +375,39 @@
   const REDIRECT_URL = "http://10.1.0.100:5173";
   const REDIRECT_DELAY = 900; // ms to linger on the "connected" state before leaving
 
-  // --- server pool: SEA + South Asia + Central America + Africa ---
+  // --- server pool: Europe, Canada, Eastern Europe, SEA, South Asia, Africa, Central/South America ---
   const SERVERS = [
+    // Europe
+    {country:"Germany", city:"Frankfurt", flag:"🇩🇪"},
+    {country:"France", city:"Paris", flag:"🇫🇷"},
+    {country:"Netherlands", city:"Amsterdam", flag:"🇳🇱"},
+    {country:"Sweden", city:"Stockholm", flag:"🇸🇪"},
+    {country:"Switzerland", city:"Zurich", flag:"🇨🇭"},
+    {country:"Poland", city:"Warsaw", flag:"🇵🇱"},
+    {country:"Romania", city:"Bucharest", flag:"🇷🇴"},
+    {country:"Portugal", city:"Lisbon", flag:"🇵🇹"},
+    {country:"Ireland", city:"Dublin", flag:"🇮🇪"},
+    {country:"Finland", city:"Helsinki", flag:"🇫🇮"},
+    // Canada
+    {country:"Canada", city:"Toronto", flag:"🇨🇦"},
+    {country:"Canada", city:"Montreal", flag:"🇨🇦"},
+    {country:"Canada", city:"Vancouver", flag:"🇨🇦"},
+    // Eastern Europe / CIS
+    {country:"Belarus", city:"Minsk", flag:"🇧🇾"},
+    {country:"Ukraine", city:"Kyiv", flag:"🇺🇦"},
+    {country:"Moldova", city:"Chisinau", flag:"🇲🇩"},
+    {country:"Georgia", city:"Tbilisi", flag:"🇬🇪"},
+    {country:"Armenia", city:"Yerevan", flag:"🇦🇲"},
+    // Southeast / South Asia
     {country:"Vietnam", city:"Hanoi", flag:"🇻🇳"},
     {country:"Vietnam", city:"Ho Chi Minh City", flag:"🇻🇳"},
     {country:"Cambodia", city:"Phnom Penh", flag:"🇰🇭"},
-    {country:"Cambodia", city:"Siem Reap", flag:"🇰🇭"},
     {country:"Sri Lanka", city:"Colombo", flag:"🇱🇰"},
     {country:"Myanmar", city:"Yangon", flag:"🇲🇲"},
-    {country:"Nicaragua", city:"Managua", flag:"🇳🇮"},
     {country:"Laos", city:"Vientiane", flag:"🇱🇦"},
     {country:"Bangladesh", city:"Dhaka", flag:"🇧🇩"},
     {country:"Nepal", city:"Kathmandu", flag:"🇳🇵"},
+    // Africa
     {country:"Nigeria", city:"Lagos", flag:"🇳🇬"},
     {country:"Kenya", city:"Nairobi", flag:"🇰🇪"},
     {country:"Ghana", city:"Accra", flag:"🇬🇭"},
@@ -423,11 +418,13 @@
     {country:"Senegal", city:"Dakar", flag:"🇸🇳"},
     {country:"Uganda", city:"Kampala", flag:"🇺🇬"},
     {country:"Zambia", city:"Lusaka", flag:"🇿🇲"},
+    // Central / South America
+    {country:"Nicaragua", city:"Managua", flag:"🇳🇮"},
     {country:"Honduras", city:"Tegucigalpa", flag:"🇭🇳"},
     {country:"Guatemala", city:"Guatemala City", flag:"🇬🇹"},
-    {country:"Mongolia", city:"Ulaanbaatar", flag:"🇲🇳"},
     {country:"Bolivia", city:"La Paz", flag:"🇧🇴"},
-    {country:"Georgia", city:"Tbilisi", flag:"🇬🇪"},
+    // Other
+    {country:"Mongolia", city:"Ulaanbaatar", flag:"🇲🇳"},
   ];
 
   const pick = SERVERS[Math.floor(Math.random() * SERVERS.length)];
@@ -436,7 +433,6 @@
   const localIp = fakeIp();
   const vpnIp = fakeIp();
 
-  // populate hidden fields early (revealed later)
   document.getElementById("flag").textContent = pick.flag;
   document.getElementById("country").textContent = pick.country;
   document.getElementById("city").textContent = pick.city;
@@ -444,7 +440,6 @@
   document.getElementById("ping").textContent = fakePing() + " ms";
   document.getElementById("ipValue").textContent = localIp;
 
-  // clock
   const clockEl = document.getElementById("clock");
   function tick(){
     const d = new Date();
@@ -501,7 +496,6 @@
         document.getElementById("serverCard").classList.add("show");
         document.getElementById("badge").classList.add("show");
 
-        // redirect once the tunnel shows as connected
         setTimeout(() => {
           window.location.href = REDIRECT_URL;
         }, REDIRECT_DELAY);
