@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureTunnel // connecting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e12;
+    --bg-2:#0e1420;
+    --panel:#11181f;
+    --line:#1e2a33;
+    --amber:#ffb454;
+    --teal:#2de6b0;
+    --teal-dim:#17493d;
+    --red:#ff5d5d;
+    --ink:#cfe3e0;
+    --ink-dim:#5c7a78;
+    --ink-faint:#3a4d4c;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 600px at 50% -10%, #10241f 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'JetBrains Mono', monospace;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:24px;
+    overflow:hidden;
+  }
+
+  /* faint scanline / grid texture */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(45,230,176,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45,230,176,0.035) 1px, transparent 1px);
+    background-size:34px 34px;
+    pointer-events:none;
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
+  }
+
+  .frame{
+    position:relative;
+    width:100%;
+    max-width:460px;
+    background:linear-gradient(180deg, var(--panel), #0c1218);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,0.7), 0 0 0 1px rgba(45,230,176,0.03);
+    padding:22px 22px 26px;
+  }
+
+  /* top bar */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-bottom:16px;
+    margin-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex; align-items:center; gap:9px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.03em;
+    color:var(--ink);
+  }
+  .brand .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 10px var(--teal);
+    animation:pulse-dot 1.6s ease-in-out infinite;
+  }
+  .brand .dot.done{animation:none; box-shadow:0 0 12px var(--teal);}
+  @keyframes pulse-dot{
+    0%,100%{opacity:1; transform:scale(1);}
+    50%{opacity:.45; transform:scale(.8);}
+  }
+  .clock{
+    font-size:11px;
+    color:var(--ink-dim);
+    letter-spacing:0.04em;
+  }
+
+  /* radar */
+  .radar-wrap{
+    display:flex;
+    justify-content:center;
+    margin:6px 0 18px;
+  }
+  .radar{
+    position:relative;
+    width:150px; height:150px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(45,230,176,0.06), transparent 70%),
+      var(--bg-2);
+    border:1px solid var(--line);
+  }
+  .radar .ring{
+    position:absolute; inset:0;
+    border-radius:50%;
+    border:1px solid rgba(45,230,176,0.14);
+  }
+  .radar .ring.r2{inset:22px;}
+  .radar .ring.r3{inset:44px;}
+  .radar .crosshair{
+    position:absolute; inset:0;
+  }
+  .radar .crosshair::before,.radar .crosshair::after{
+    content:"";
+    position:absolute;
+    background:rgba(45,230,176,0.1);
+  }
+  .radar .crosshair::before{ left:50%; top:0; bottom:0; width:1px; transform:translateX(-50%);}
+  .radar .crosshair::after{ top:50%; left:0; right:0; height:1px; transform:translateY(-50%);}
+  .sweep{
+    position:absolute; inset:0;
+    border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(45,230,176,0.55), transparent 32%);
+    animation:spin 2.6s linear infinite;
+    -webkit-mask-image:radial-gradient(circle, black 96%, transparent 100%);
+            mask-image:radial-gradient(circle, black 96%, transparent 100%);
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .radar .core{
+    position:absolute; left:50%; top:50%;
+    width:9px; height:9px; margin:-4.5px 0 0 -4.5px;
+    border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 16px 4px rgba(45,230,176,0.55);
+  }
+  .blip{
+    position:absolute;
+    width:6px; height:6px; margin:-3px 0 0 -3px;
+    border-radius:50%;
+    background:var(--amber);
+    opacity:0;
+    animation:blip-fade 2.6s ease-in-out infinite;
+  }
+  @keyframes blip-fade{
+    0%{opacity:0;}
+    8%{opacity:1;}
+    30%{opacity:0;}
+    100%{opacity:0;}
+  }
+  .radar.locked .sweep{animation-duration:0;background:none;}
+  .radar.locked .core{background:var(--teal); box-shadow:0 0 22px 8px rgba(45,230,176,0.7);}
+  .radar.locked .blip{display:none;}
+
+  /* status headline */
+  .status-line{
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .status-line .verb{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:17px;
+    letter-spacing:0.01em;
+    color:var(--ink);
+  }
+  .status-line .verb .cursor{
+    display:inline-block;
+    width:8px; height:16px;
+    background:var(--amber);
+    margin-left:3px;
+    vertical-align:-3px;
+    animation:blink 0.9s steps(1) infinite;
+  }
+  .status-line.done .verb .cursor{display:none;}
+  @keyframes blink{ 50%{opacity:0;} }
+  .status-line .sub{
+    font-size:11.5px;
+    color:var(--ink-dim);
+    margin-top:5px;
+    letter-spacing:0.02em;
+  }
+
+  /* progress bar */
+  .bar-track{
+    height:5px;
+    border-radius:3px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .bar-fill{
+    height:100%;
+    width:0%;
+    border-radius:3px;
+    background:linear-gradient(90deg, var(--amber), var(--teal));
+    transition:width 0.35s ease;
+    box-shadow:0 0 10px rgba(45,230,176,0.4);
+  }
+
+  /* log */
+  .log{
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 13px;
+    height:118px;
+    overflow:hidden;
+    font-size:11.5px;
+    line-height:1.85;
+    color:var(--ink-dim);
+  }
+  .log div{
+    opacity:0;
+    transform:translateY(3px);
+    animation:log-in 0.35s ease forwards;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  @keyframes log-in{ to{opacity:1; transform:translateY(0);} }
+  .log .ok{color:var(--teal);}
+  .log .tag{color:var(--ink-faint);}
+
+  /* server reveal card */
+  .server-card{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:grid;
+    grid-template-columns:44px 1fr auto;
+    align-items:center;
+    gap:12px;
+    opacity:0;
+    transform:translateY(6px);
+    pointer-events:none;
+    transition:opacity 0.5s ease, transform 0.5s ease;
+  }
+  .server-card.show{opacity:1; transform:translateY(0); pointer-events:auto;}
+  .flag{
+    font-size:30px;
+    line-height:1;
+    width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .server-meta .country{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    color:var(--ink);
+  }
+  .server-meta .city{
+    font-size:11px;
+    color:var(--ink-dim);
+    margin-top:2px;
+  }
+  .server-stats{
+    text-align:right;
+    font-size:10.5px;
+    color:var(--ink-dim);
+    line-height:1.7;
+  }
+  .server-stats .ip{color:var(--ink);}
+  .server-stats .ping{color:var(--teal);}
+
+  .badge{
+    display:none;
+    align-items:center;
+    gap:6px;
+    justify-content:center;
+    margin-top:16px;
+    padding:8px;
+    border-radius:8px;
+    background:var(--teal-dim);
+    border:1px solid rgba(45,230,176,0.35);
+    color:var(--teal);
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  .badge.show{display:flex;}
+  .badge svg{width:13px; height:13px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .sweep{animation:none;}
+    .brand .dot{animation:none;}
+    .status-line .verb .cursor{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="topbar">
+    <div class="brand"><span class="dot" id="brandDot"></span>SECURETUNNEL</div>
+    <div class="clock" id="clock">00:00:00</div>
+  </div>
+
+  <div class="radar-wrap">
+    <div class="radar" id="radar">
+      <div class="ring"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="crosshair"></div>
+      <div class="sweep"></div>
+      <div class="blip" style="left:70%; top:32%;"></div>
+      <div class="blip" style="left:28%; top:64%; animation-delay:0.9s;"></div>
+      <div class="blip" style="left:64%; top:74%; animation-delay:1.7s;"></div>
+      <div class="core"></div>
+    </div>
+  </div>
+
+  <div class="status-line" id="statusLine">
+    <div class="verb" id="verb">Initializing<span class="cursor"></span></div>
+    <div class="sub" id="sub">preparing encrypted session</div>
+  </div>
+
+  <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+
+  <div class="log" id="log"></div>
+
+  <div class="server-card" id="serverCard">
+    <div class="flag" id="flag">🏳️</div>
+    <div class="server-meta">
+      <div class="country" id="country">—</div>
+      <div class="city" id="city">—</div>
+    </div>
+    <div class="server-stats">
+      <div class="ip" id="ip">—</div>
+      <div>udp · wireguard</div>
+      <div class="ping" id="ping">— ms</div>
+    </div>
+  </div>
+
+  <div class="badge" id="badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    Tunnel secured
+  </div>
+</div>
+
+<script>
+(function(){
+  // where to send the user once "connected" — edit as needed
+  const REDIRECT_URL = "http://10.1.0.100:5173";
+  const REDIRECT_DELAY = 900; // ms to linger on the "connected" state before leaving
+
+  // --- server pool: SEA + South Asia + Central America + Africa ---
+  const SERVERS = [
+    {country:"Vietnam", city:"Hanoi", flag:"🇻🇳"},
+    {country:"Vietnam", city:"Ho Chi Minh City", flag:"🇻🇳"},
+    {country:"Cambodia", city:"Phnom Penh", flag:"🇰🇭"},
+    {country:"Cambodia", city:"Siem Reap", flag:"🇰🇭"},
+    {country:"Sri Lanka", city:"Colombo", flag:"🇱🇰"},
+    {country:"Myanmar", city:"Yangon", flag:"🇲🇲"},
+    {country:"Nicaragua", city:"Managua", flag:"🇳🇮"},
+    {country:"Laos", city:"Vientiane", flag:"🇱🇦"},
+    {country:"Bangladesh", city:"Dhaka", flag:"🇧🇩"},
+    {country:"Nepal", city:"Kathmandu", flag:"🇳🇵"},
+    {country:"Nigeria", city:"Lagos", flag:"🇳🇬"},
+    {country:"Kenya", city:"Nairobi", flag:"🇰🇪"},
+    {country:"Ghana", city:"Accra", flag:"🇬🇭"},
+    {country:"Ethiopia", city:"Addis Ababa", flag:"🇪🇹"},
+    {country:"Tanzania", city:"Dar es Salaam", flag:"🇹🇿"},
+    {country:"South Africa", city:"Johannesburg", flag:"🇿🇦"},
+    {country:"Morocco", city:"Casablanca", flag:"🇲🇦"},
+    {country:"Senegal", city:"Dakar", flag:"🇸🇳"},
+    {country:"Uganda", city:"Kampala", flag:"🇺🇬"},
+    {country:"Zambia", city:"Lusaka", flag:"🇿🇲"},
+    {country:"Honduras", city:"Tegucigalpa", flag:"🇭🇳"},
+    {country:"Guatemala", city:"Guatemala City", flag:"🇬🇹"},
+    {country:"Mongolia", city:"Ulaanbaatar", flag:"🇲🇳"},
+    {country:"Bolivia", city:"La Paz", flag:"🇧🇴"},
+    {country:"Georgia", city:"Tbilisi", flag:"🇬🇪"},
+  ];
+
+  const pick = SERVERS[Math.floor(Math.random() * SERVERS.length)];
+  const fakeIp = () => Array.from({length:4}, () => Math.floor(Math.random()*255)+1).join(".");
+  const fakePing = () => Math.floor(Math.random()*70) + 38;
+
+  // populate hidden fields early (revealed later)
+  document.getElementById("flag").textContent = pick.flag;
+  document.getElementById("country").textContent = pick.country;
+  document.getElementById("city").textContent = pick.city;
+  document.getElementById("ip").textContent = fakeIp();
+  document.getElementById("ping").textContent = fakePing() + " ms";
+
+  // clock
+  const clockEl = document.getElementById("clock");
+  function tick(){
+    const d = new Date();
+    const p = n => String(n).padStart(2,"0");
+    clockEl.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // sequence
+  const steps = [
+    {verb:"Initializing", sub:"preparing encrypted session", log:'<span class="tag">[boot]</span> loading cipher suite <span class="ok">chacha20-poly1305</span>', pct:12, t:450},
+    {verb:"Scanning relays", sub:"probing available exit nodes", log:'<span class="tag">[scan]</span> querying relay pool <span class="ok">312 nodes</span>', pct:30, t:650},
+    {verb:"Selecting server", sub:"choosing lowest-latency route", log:`<span class="tag">[route]</span> candidate locked → <span class="ok">${pick.city}, ${pick.country}</span>`, pct:52, t:650},
+    {verb:"Negotiating handshake", sub:"exchanging session keys", log:'<span class="tag">[auth]</span> wireguard handshake <span class="ok">accepted</span>', pct:74, t:600},
+    {verb:"Verifying encryption", sub:"validating tunnel integrity", log:'<span class="tag">[check]</span> AES-256 tunnel <span class="ok">verified</span>', pct:92, t:550},
+    {verb:"Connected", sub:"traffic is now encrypted", log:'<span class="tag">[link]</span> tunnel established <span class="ok">✓ secure</span>', pct:100, t:500},
+  ];
+
+  const verbEl = document.getElementById("verb");
+  const subEl = document.getElementById("sub");
+  const barEl = document.getElementById("barFill");
+  const logEl = document.getElementById("log");
+  const radarEl = document.getElementById("radar");
+  const statusLine = document.getElementById("statusLine");
+  const brandDot = document.getElementById("brandDot");
+
+  let delay = 250;
+  steps.forEach((s, i) => {
+    setTimeout(() => {
+      const isLast = i === steps.length - 1;
+      verbEl.innerHTML = s.verb + (isLast ? "" : '<span class="cursor"></span>');
+      subEl.textContent = s.sub;
+      barEl.style.width = s.pct + "%";
+
+      const row = document.createElement("div");
+      row.innerHTML = s.log;
+      logEl.appendChild(row);
+      logEl.scrollTop = logEl.scrollHeight;
+
+      if (isLast) {
+        statusLine.classList.add("done");
+        radarEl.classList.add("locked");
+        brandDot.classList.add("done");
+        document.getElementById("serverCard").classList.add("show");
+        document.getElementById("badge").classList.add("show");
+
+        // redirect once the tunnel shows as connected
+        setTimeout(() => {
+          window.location.href = REDIRECT_URL;
+        }, REDIRECT_DELAY);
+      }
+    }, delay);
+    delay += s.t;
+  });
+})();
+</script>
+
+</body>
+</html>
