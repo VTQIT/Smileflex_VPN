@@ -317,7 +317,7 @@
 
 <div class="frame">
   <div class="topbar">
-    <div class="brand"><span class="dot" id="brandDot"></span>Connecting to STARLINK.. </div>
+    <div class="brand"><span class="dot" id="brandDot"></span>SECURETUNNEL</div>
     <div class="clock" id="clock">00:00:00</div>
   </div>
 
@@ -365,7 +365,7 @@
 
   <div class="badge" id="badge">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-    Starlink Secured
+    Tunnel secured
   </div>
 </div>
 
@@ -450,16 +450,16 @@
 
   // sequence — tuned to run ~20s total
   const steps = [
-    {verb:"Initializing", sub:"preparing encrypted session", log:'<span class="tag">[boot]</span> loading cipher suite <span class="ok">chacha20-poly1305</span>', pct:8, t:1600},
-    {verb:"Checking network", sub:"reading current connection", log:`<span class="tag">[net]</span> local address <span class="ok">${localIp}</span> detected`, pct:16, t:1700},
-    {verb:"Scanning relays", sub:"probing available exit nodes", log:'<span class="tag">[scan]</span> querying relay pool <span class="ok">312 nodes</span>', pct:27, t:2200},
-    {verb:"Measuring latency", sub:"ranking nodes by response time", log:'<span class="tag">[ping]</span> sweeping candidate relays <span class="ok">done</span>', pct:38, t:2000},
-    {verb:"Selecting server", sub:"choosing lowest-latency route", log:`<span class="tag">[route]</span> candidate locked → <span class="ok">${pick.city}, ${pick.country}</span>`, pct:49, t:2100},
-    {verb:"Negotiating handshake", sub:"exchanging session keys", log:'<span class="tag">[auth]</span> wireguard handshake <span class="ok">accepted</span>', pct:61, t:2300},
-    {verb:"Building tunnel", sub:"establishing encrypted channel", log:'<span class="tag">[link]</span> opening udp tunnel <span class="ok">port 51820</span>', pct:72, t:2100},
-    {verb:"Rerouting DNS", sub:"pointing DNS through the tunnel", log:'<span class="tag">[dns]</span> leak check <span class="ok">passed</span>', pct:83, t:2000},
-    {verb:"Verifying encryption", sub:"validating tunnel integrity", log:'<span class="tag">[check]</span> AES-256 tunnel <span class="ok">verified</span>', pct:93, t:2000},
-    {verb:"Connected", sub:"traffic is now encrypted", log:`<span class="tag">[link]</span> tunnel established → <span class="ok">${vpnIp}</span>`, pct:100, t:2000},
+    {verb:"Initializing", sub:"preparing encrypted session", log:'<span class="tag">[boot]</span> loading cipher suite <span class="ok">chacha20-poly1305</span>', pct:8, t:560},
+    {verb:"Checking network", sub:"reading current connection", log:`<span class="tag">[net]</span> local address <span class="ok">${localIp}</span> detected`, pct:16, t:600},
+    {verb:"Scanning relays", sub:"probing available exit nodes", log:'<span class="tag">[scan]</span> querying relay pool <span class="ok">312 nodes</span>', pct:27, t:770},
+    {verb:"Measuring latency", sub:"ranking nodes by response time", log:'<span class="tag">[ping]</span> sweeping candidate relays <span class="ok">done</span>', pct:38, t:700},
+    {verb:"Selecting server", sub:"choosing lowest-latency route", log:`<span class="tag">[route]</span> candidate locked → <span class="ok">${pick.city}, ${pick.country}</span>`, pct:49, t:730},
+    {verb:"Negotiating handshake", sub:"exchanging session keys", log:'<span class="tag">[auth]</span> wireguard handshake <span class="ok">accepted</span>', pct:61, t:800},
+    {verb:"Building tunnel", sub:"establishing encrypted channel", log:'<span class="tag">[link]</span> opening udp tunnel <span class="ok">port 51820</span>', pct:72, t:730},
+    {verb:"Rerouting DNS", sub:"pointing DNS through the tunnel", log:'<span class="tag">[dns]</span> leak check <span class="ok">passed</span>', pct:83, t:700},
+    {verb:"Verifying encryption", sub:"validating tunnel integrity", log:'<span class="tag">[check]</span> AES-256 tunnel <span class="ok">verified</span>', pct:93, t:700},
+    {verb:"Connected", sub:"traffic is now encrypted", log:`<span class="tag">[link]</span> tunnel established → <span class="ok">${vpnIp}</span>`, pct:100, t:700},
   ];
 
   const verbEl = document.getElementById("verb");
