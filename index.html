@@ -190,6 +190,43 @@
     letter-spacing:0.02em;
   }
 
+  /* ip exposure row */
+  .ip-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:14px;
+    font-size:11px;
+    letter-spacing:0.02em;
+  }
+  .ip-row .ip-label{
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    font-size:9.5px;
+    letter-spacing:0.08em;
+  }
+  .ip-row .ip-value{
+    color:var(--ink);
+    font-weight:500;
+    transition:color 0.3s ease;
+  }
+  .ip-row .ip-flag{
+    color:var(--red);
+    font-size:10px;
+    padding:1px 7px;
+    border-radius:20px;
+    background:rgba(255,93,93,0.1);
+    border:1px solid rgba(255,93,93,0.25);
+    transition:color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  }
+  .ip-row.masked .ip-flag{
+    color:var(--teal);
+    background:rgba(45,230,176,0.08);
+    border-color:rgba(45,230,176,0.25);
+  }
+  .ip-row.masked .ip-value{ color:var(--teal); }
+
   /* progress bar */
   .bar-track{
     height:5px;
@@ -329,6 +366,12 @@
     <div class="sub" id="sub">preparing encrypted session</div>
   </div>
 
+  <div class="ip-row" id="ipRow">
+    <span class="ip-label">your ip</span>
+    <span class="ip-value" id="ipValue">203.0.113.42</span>
+    <span class="ip-flag" id="ipFlag">⚠ exposed</span>
+  </div>
+
   <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
 
   <div class="log" id="log"></div>
@@ -390,13 +433,16 @@
   const pick = SERVERS[Math.floor(Math.random() * SERVERS.length)];
   const fakeIp = () => Array.from({length:4}, () => Math.floor(Math.random()*255)+1).join(".");
   const fakePing = () => Math.floor(Math.random()*70) + 38;
+  const localIp = fakeIp();
+  const vpnIp = fakeIp();
 
   // populate hidden fields early (revealed later)
   document.getElementById("flag").textContent = pick.flag;
   document.getElementById("country").textContent = pick.country;
   document.getElementById("city").textContent = pick.city;
-  document.getElementById("ip").textContent = fakeIp();
+  document.getElementById("ip").textContent = vpnIp;
   document.getElementById("ping").textContent = fakePing() + " ms";
+  document.getElementById("ipValue").textContent = localIp;
 
   // clock
   const clockEl = document.getElementById("clock");
@@ -407,14 +453,18 @@
   }
   tick(); setInterval(tick, 1000);
 
-  // sequence
+  // sequence — tuned to run ~20s total
   const steps = [
-    {verb:"Initializing", sub:"preparing encrypted session", log:'<span class="tag">[boot]</span> loading cipher suite <span class="ok">chacha20-poly1305</span>', pct:12, t:450},
-    {verb:"Scanning relays", sub:"probing available exit nodes", log:'<span class="tag">[scan]</span> querying relay pool <span class="ok">312 nodes</span>', pct:30, t:650},
-    {verb:"Selecting server", sub:"choosing lowest-latency route", log:`<span class="tag">[route]</span> candidate locked → <span class="ok">${pick.city}, ${pick.country}</span>`, pct:52, t:650},
-    {verb:"Negotiating handshake", sub:"exchanging session keys", log:'<span class="tag">[auth]</span> wireguard handshake <span class="ok">accepted</span>', pct:74, t:600},
-    {verb:"Verifying encryption", sub:"validating tunnel integrity", log:'<span class="tag">[check]</span> AES-256 tunnel <span class="ok">verified</span>', pct:92, t:550},
-    {verb:"Connected", sub:"traffic is now encrypted", log:'<span class="tag">[link]</span> tunnel established <span class="ok">✓ secure</span>', pct:100, t:500},
+    {verb:"Initializing", sub:"preparing encrypted session", log:'<span class="tag">[boot]</span> loading cipher suite <span class="ok">chacha20-poly1305</span>', pct:8, t:1600},
+    {verb:"Checking network", sub:"reading current connection", log:`<span class="tag">[net]</span> local address <span class="ok">${localIp}</span> detected`, pct:16, t:1700},
+    {verb:"Scanning relays", sub:"probing available exit nodes", log:'<span class="tag">[scan]</span> querying relay pool <span class="ok">312 nodes</span>', pct:27, t:2200},
+    {verb:"Measuring latency", sub:"ranking nodes by response time", log:'<span class="tag">[ping]</span> sweeping candidate relays <span class="ok">done</span>', pct:38, t:2000},
+    {verb:"Selecting server", sub:"choosing lowest-latency route", log:`<span class="tag">[route]</span> candidate locked → <span class="ok">${pick.city}, ${pick.country}</span>`, pct:49, t:2100},
+    {verb:"Negotiating handshake", sub:"exchanging session keys", log:'<span class="tag">[auth]</span> wireguard handshake <span class="ok">accepted</span>', pct:61, t:2300},
+    {verb:"Building tunnel", sub:"establishing encrypted channel", log:'<span class="tag">[link]</span> opening udp tunnel <span class="ok">port 51820</span>', pct:72, t:2100},
+    {verb:"Rerouting DNS", sub:"pointing DNS through the tunnel", log:'<span class="tag">[dns]</span> leak check <span class="ok">passed</span>', pct:83, t:2000},
+    {verb:"Verifying encryption", sub:"validating tunnel integrity", log:'<span class="tag">[check]</span> AES-256 tunnel <span class="ok">verified</span>', pct:93, t:2000},
+    {verb:"Connected", sub:"traffic is now encrypted", log:`<span class="tag">[link]</span> tunnel established → <span class="ok">${vpnIp}</span>`, pct:100, t:2000},
   ];
 
   const verbEl = document.getElementById("verb");
@@ -424,8 +474,11 @@
   const radarEl = document.getElementById("radar");
   const statusLine = document.getElementById("statusLine");
   const brandDot = document.getElementById("brandDot");
+  const ipRow = document.getElementById("ipRow");
+  const ipValue = document.getElementById("ipValue");
+  const ipFlag = document.getElementById("ipFlag");
 
-  let delay = 250;
+  let delay = 300;
   steps.forEach((s, i) => {
     setTimeout(() => {
       const isLast = i === steps.length - 1;
@@ -442,6 +495,9 @@
         statusLine.classList.add("done");
         radarEl.classList.add("locked");
         brandDot.classList.add("done");
+        ipRow.classList.add("masked");
+        ipValue.textContent = vpnIp;
+        ipFlag.textContent = "✓ protected";
         document.getElementById("serverCard").classList.add("show");
         document.getElementById("badge").classList.add("show");
 
